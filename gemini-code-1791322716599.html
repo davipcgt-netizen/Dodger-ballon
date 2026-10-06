@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dodger Balloon</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background: #0f172a;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 400px;
+            height: 100%;
+            max-height: 700px;
+            background: linear-gradient(135deg, #1e1b4b, #311042);
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .screen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Botón de Notas / Versión en esquina superior derecha */
+        .patch-notes-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            width: 45px;
+            height: 45px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+
+        .patch-notes-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        /* Puntito rojo parpadeante */
+        .blink-dot {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 10px;
+            height: 10px;
+            background-color: #f43f5e;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #f43f5e;
+            animation: blink 1.2s infinite ease-in-out;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 0.2; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        /* Panel de Notas de Actualización con Scroll */
+        .patch-modal {
+            width: 85%;
+            max-width: 320px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 2px solid #a855f7;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(168, 85, 247, 0.3);
+            animation: bounceIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            z-index: 25;
+        }
+
+        .patch-modal h2 {
+            font-size: 1.5rem;
+            color: #a855f7;
+            margin-bottom: 12px;
+            text-align: center;
+            text-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+        }
+
+        .patch-scroll-area {
+            max-height: 220px;
+            overflow-y: auto;
+            padding-right: 8px;
+            margin-bottom: 15px;
+            text-align: left;
+            font-size: 0.9rem;
+            color: #cbd5e1;
+            line-height: 1.4;
+        }
+
+        /* Personalización del Scroll */
+        .patch-scroll-area::-webkit-scrollbar {
+            width: 6px;
+        }
+        .patch-scroll-area::-webkit-scrollbar-thumb {
+            background: rgba(168, 85, 247, 0.5);
+            border-radius: 3px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 5px;
+            text-align: center;
+            background: linear-gradient(45deg, #f43f5e, #fb7185);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 5px 15px rgba(244, 63, 94, 0.3);
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: #cbd5e1;
+            margin-bottom: 25px;
+        }
+
+        /* Panel de Récords en el Menú */
+        .records-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: left;
+            width: 80%;
+            max-width: 250px;
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+
+        .records-panel p {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 4px 0;
+        }
+
+        .records-panel span {
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .menu-btn {
+            width: 80%;
+            max-width: 250px;
+            padding: 15px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .menu-btn:hover {
+            background: #f43f5e;
+            border-color: #f43f5e;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(244, 63, 94, 0.4);
+        }
+
+        /* Menú de Opciones */
+        .options-box {
+            width: 85%;
+            max-width: 320px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 2px solid #38bdf8;
+            padding: 25px 20px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(56, 189, 248, 0.3);
+            animation: bounceIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .options-box h2 {
+            font-size: 1.8rem;
+            color: #38bdf8;
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+        }
+
+        .option-group {
+            width: 100%;
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .option-group label {
+            font-size: 0.9rem;
+            color: #cbd5e1;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .option-select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .option-select option {
+            background: #1e1b4b;
+            color: #fff;
+        }
+
+        /* Cartel Cool de Game Over */
+        #gameover-card {
+            background: rgba(15, 23, 42, 0.95);
+            border: 2px solid #f43f5e;
+            padding: 25px 20px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(244, 63, 94, 0.4);
+            animation: bounceIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            width: 85%;
+            max-width: 320px;
+            z-index: 20;
+        }
+
+        #gameover-card h2 {
+            font-size: 1.8rem;
+            color: #f43f5e;
+            margin-bottom: 8px;
+            text-shadow: 0 0 10px rgba(244, 63, 94, 0.5);
+        }
+
+        .final-score {
+            font-size: 1.1rem;
+            color: #cbd5e1;
+            margin-bottom: 12px;
+        }
+
+        .new-record-badge {
+            background: #fbbf24;
+            color: #713f12;
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 6px;
+            display: inline-block;
+            margin-left: 5px;
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.1); }
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        canvas {
+            background: #060913;
+            display: block;
+        }
+
+        #game-ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* Icono de moneda UI */
+        .ui-coin-icon {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #fde047 0%, #eab308 50%, #ca8a04 100%);
+            border: 2px solid #fef08a;
+            border-radius: 50%;
+            vertical-align: middle;
+            margin-right: 6px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4), inset 0 2px 3px rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+            font-weight: 900;
+            color: #713f12;
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
+
+        #notification {
+            position: absolute;
+            bottom: 40px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 2px solid #f43f5e;
+            padding: 15px 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(244, 63, 94, 0.4);
+            animation: bounceIn 0.3s ease;
+            z-index: 30;
+            width: 85%;
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        
+        <!-- BOTÓN DE LIBRO/CARTA CON LED PARPADEANTE EN LA ESQUINA -->
+        <div class="patch-notes-btn" onclick="showPatchNotes()" title="Notas de Versión">
+            <div class="blink-dot"></div>
+            <!-- Icono de librito SVG -->
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+        </div>
+
+        <!-- MENÚ PRINCIPAL -->
+        <div id="main-menu" class="screen">
+            <h1 id="t-title">Dodger Balloon</h1>
+            <p id="t-subtitle" class="subtitle">🎈 Esquiva los obstáculos</p>
+            
+            <div class="records-panel">
+                <p><span id="t-bestscore">🏆 Récord Puntos:</span> <span id="menu-high-score">0</span></p>
+                <p>
+                    <span style="display:inline-flex; align-items:center;">
+                        <span class="ui-coin-icon" style="width: 18px; height: 18px; font-size: 9px; margin-right: 4px;">$</span><span id="t-bestcoins">Récord Monedas:</span>
+                    </span> 
+                    <span id="menu-high-coins">0</span>
+                </p>
+            </div>
+
+            <button id="t-play" class="menu-btn" onclick="startGame()">Jugar</button>
+            <button id="t-options" class="menu-btn" onclick="showOptions()">Opciones</button>
+            <button id="t-store" class="menu-btn" onclick="showStoreNotice()">Tienda</button>
+        </div>
+
+        <!-- PANTALLA DE NOTAS DE PARCHE (VERSIONS) -->
+        <div id="patch-screen" class="screen hidden">
+            <div class="patch-modal">
+                <h2>📖 Notas de Versión</h2>
+                <div class="patch-scroll-area">
+                    <p style="font-weight: bold; color: #a855f7; margin-bottom: 6px;">Versión Actual: BETA</p>
+                    <p style="margin-bottom: 12px; font-size: 0.85rem;">- Implementación de jugabilidad fluida a 60 FPS.<br>- Sistema de monedas recolectables.<br>- Guardado de récords con LocalStorage.<br>- Menú principal vertical optimizado.</p>
+                    
+                    <p style="font-weight: bold; color: #38bdf8; margin-bottom: 6px;">Próxima Actualización:</p>
+                    <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 12px;">- ¡Próximamente nuevos skins para el globo en la Tienda!<br>- Nuevos tipos de obstáculos y power-ups especiales.<br>- Modos de dificultad adicionales y logros desbloqueables.</p>
+
+                    <div style="background: rgba(239, 68, 68, 0.15); border: 1px dashed #ef4444; padding: 10px; border-radius: 8px; text-align: center;">
+                        <p style="font-weight: bold; color: #f87171; font-size: 0.85rem;">😱 STRANGER THINGS LLEGA PRONTO A DODGER BALLON 👻</p>
+                        <p style="font-size: 0.75rem; color: #fca5a5; margin-top: 4px;">Prepárate para esquivar criaturas del Otro Lado...</p>
+                    </div>
+                </div>
+                <button id="t-patch-back" class="menu-btn" style="width: 100%; margin: 0;" onclick="closePatchNotes()">Volver</button>
+            </div>
+        </div>
+
+        <!-- PANTALLA DE OPCIONES -->
+        <div id="options-screen" class="screen hidden">
+            <div class="options-box">
+                <h2 id="t-opt-title">Opciones</h2>
+                
+                <div class="option-group">
+                    <label id="t-opt-lang" for="language-select">🌍 Idioma:</label>
+                    <select id="language-select" class="option-select" onchange="setLanguage(this.value)">
+                        <option value="es">Español</option>
+                        <option value="en">English</option>
+                        <option value="zh">中文</option>
+                        <option value="fr">Français</option>
+                        <option value="pt">Português</option>
+                    </select>
+                </div>
+
+                <button id="t-opt-back" class="menu-btn" style="width: 100%; margin-top: 10px;" onclick="closeOptions()">Volver</button>
+            </div>
+        </div>
+
+        <!-- PANTALLA DE JUEGO -->
+        <div id="game-screen" class="screen hidden" style="padding: 0;">
+            <div id="game-ui">
+                <span id="score-board">Puntos: 0</span>
+                <span id="coin-board" style="color: #fbbf24; text-shadow: 0 0 10px rgba(251, 191, 36, 0.4);">
+                    <span class="ui-coin-icon">$</span>0
+                </span>
+            </div>
+            <canvas id="gameCanvas"></canvas>
+            
+            <!-- CARTEL GAME OVER FLOTANTE -->
+            <div id="gameover-card" class="screen hidden" style="background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(5px);">
+                <h2 id="t-gameover">¡GAME OVER!</h2>
+                <p class="final-score"><span id="t-scorelbl">Puntuación:</span> <span id="final-score-val" style="color: #fff; font-weight: bold;">0</span><span id="new-score-badge" class="hidden">¡NUEVO!</span></p>
+                <p class="final-score" style="margin-top: -8px;"><span id="t-coinslbl">Monedas:</span> <span id="final-coins-val" style="color: #fbbf24; font-weight: bold;">0</span><span id="new-coins-badge" class="hidden">¡NUEVO!</span></p>
+                <button id="t-retry" class="menu-btn" style="width: 100%; margin-bottom: 8px;" onclick="startGame()">Jugar de Nuevo</button>
+                <button id="t-menu" class="menu-btn" style="width: 100%; background: rgba(255,255,255,0.05);" onclick="returnToMenu()">Menú Principal</button>
+            </div>
+        </div>
+
+        <!-- NOTIFICACIÓN FLOTANTE -->
+        <div id="notification" class="hidden">
+            <p id="notif-title" style="font-weight: bold; color: #fb3f5e;">🚧 ¡Aún estamos trabajando en ello!</p>
+            <p id="notif-desc" style="font-size: 0.8rem; color: #94a3b8; margin-top: 5px;">Pronto habrá sorpresas aquí.</p>
+        </div>
+
+    </div>
+
+    <script>
+        const mainMenu = document.getElementById('main-menu');
+        const patchScreen = document.getElementById('patch-screen');
+        const optionsScreen = document.getElementById('options-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const notification = document.getElementById('notification');
+        const notifTitle = document.getElementById('notif-title');
+        const notifDesc = document.getElementById('notif-desc');
+        const gameOverCard = document.getElementById('gameover-card');
+        const finalScoreVal = document.getElementById('final-score-val');
+        const finalCoinsVal = document.getElementById('final-coins-val');
+        const menuHighScore = document.getElementById('menu-high-score');
+        const menuHighCoins = document.getElementById('menu-high-coins');
+        const newScoreBadge = document.getElementById('new-score-badge');
+        const newCoinsBadge = document.getElementById('new-coins-badge');
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreBoard = document.getElementById('score-board');
+        const coinBoard = document.getElementById('coin-board');
+        const patchNotesBtn = document.querySelector('.patch-notes-btn');
+
+        canvas.width = 400;
+        canvas.height = 700;
+
+        const translations = {
+            es: {
+                subtitle: "🎈 Esquiva los obstáculos",
+                bestScore: "🏆 Récord Puntos:",
+                bestCoins: "Récord Monedas:",
+                play: "Jugar",
+                options: "Opciones",
+                store: "Tienda",
+                optTitle: "Opciones",
+                optLang: "🌍 Idioma:",
+                back: "Volver",
+                gameOver: "¡GAME OVER!",
+                scoreLbl: "Puntuación:",
+                coinsLbl: "Monedas:",
+                retry: "Jugar de Nuevo",
+                menu: "Menú Principal",
+                newBadge: "¡NUEVO!",
+                storeNoticeTitle: "🚧 ¡Aún estamos trabajando en ello!",
+                storeNoticeDesc: "Pronto habrá sorpresas aquí."
+            },
+            en: {
+                subtitle: "🎈 Dodge the obstacles",
+                bestScore: "🏆 High Score:",
+                bestCoins: "High Coins:",
+                play: "Play",
+                options: "Options",
+                store: "Store",
+                optTitle: "Options",
+                optLang: "🌍 Language:",
+                back: "Back",
+                gameOver: "GAME OVER!",
+                scoreLbl: "Score:",
+                coinsLbl: "Coins:",
+                retry: "Play Again",
+                menu: "Main Menu",
+                newBadge: "NEW!",
+                storeNoticeTitle: "🚧 Under Construction!",
+                storeNoticeDesc: "Surprises coming soon."
+            },
+            zh: {
+                subtitle: "🎈 躲避障碍物",
+                bestScore: "🏆 最高得分:",
+                bestCoins: "最高金币:",
+                play: "开始游戏",
+                options: "选项",
+                store: "商店",
+                optTitle: "选项",
+                optLang: "🌍 语言:",
+                back: "返回",
+                gameOver: "游戏结束!",
+                scoreLbl: "得分:",
+                coinsLbl: "金币:",
+                retry: "再玩一次",
+                menu: "主菜单",
+                newBadge: "新纪录!",
+                storeNoticeTitle: "🚧 正在开发中!",
+                storeNoticeDesc: "敬请期待。"
+            },
+            fr: {
+                subtitle: "🎈 Évitez les obstacles",
+                bestScore: "🏆 Meilleur Score:",
+                bestCoins: "Meilleures Pièces:",
+                play: "Jouer",
+                options: "Options",
+                store: "Boutique",
+                optTitle: "Options",
+                optLang: "🌍 Langue:",
+                back: "Retour",
+                gameOver: "GAME OVER!",
+                scoreLbl: "Score:",
+                coinsLbl: "Pièces:",
+                retry: "Rejouer",
+                menu: "Menu Principal",
+                newBadge: "NOUVEAU!",
+                storeNoticeTitle: "🚧 En construction!",
+                storeNoticeDesc: "Bientôt de nouvelles surprises."
+            },
+            pt: {
+                subtitle: "🎈 Desvie dos obstáculos",
+                bestScore: "🏆 Recorde de Pontos:",
+                bestCoins: "Recorde de Moedas:",
+                play: "Jogar",
+                options: "Opções",
+                store: "Loja",
+                optTitle: "Opções",
+                optLang: "🌍 Idioma:",
+                back: "Voltar",
+                gameOver: "FIM DE JOGO!",
+                scoreLbl: "Pontuação:",
+                coinsLbl: "Moedas:",
+                retry: "Jogar Novamente",
+                menu: "Menu Principal",
+                newBadge: "NOVO!",
+                storeNoticeTitle: "🚧 Em construção!",
+                storeNoticeDesc: "Novidades em breve."
+            }
+        };
+
+        let currentLang = 'es';
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            const t = translations[lang];
+
+            document.getElementById('t-subtitle').innerText = t.subtitle;
+            document.getElementById('t-bestscore').innerText = t.bestScore;
+            document.getElementById('t-bestcoins').innerText = t.bestCoins;
+            document.getElementById('t-play').innerText = t.play;
+            document.getElementById('t-options').innerText = t.options;
+            document.getElementById('t-store').innerText = t.store;
+            document.getElementById('t-opt-title').innerText = t.optTitle;
+            document.getElementById('t-opt-lang').innerText = t.optLang;
+            document.getElementById('t-opt-back').innerText = t.back;
+            document.getElementById('t-patch-back').innerText = t.back;
+            document.getElementById('t-gameover').innerText = t.gameOver;
+            document.getElementById('t-scorelbl').innerText = t.scoreLbl;
+            document.getElementById('t-coinslbl').innerText = t.coinsLbl;
+            document.getElementById('t-retry').innerText = t.retry;
+            document.getElementById('t-menu').innerText = t.menu;
+            
+            const badges = document.querySelectorAll('.new-record-badge');
+            badges.forEach(b => b.innerText = t.newBadge);
+        }
+
+        let animationFrameId;
+        let score = 0;
+        let coins = 0;
+        let gameState = 'MENU';
+
+        let highScore = localStorage.getItem('dodger_highscore') || 0;
+        let highCoins = localStorage.getItem('dodger_highcoins') || 0;
+
+        function updateMenuRecords() {
+            menuHighScore.innerText = highScore;
+            menuHighCoins.innerText = highCoins;
+        }
+        updateMenuRecords();
+
+        let player = {
+            x: canvas.width / 2 - 20,
+            y: canvas.height - 120,
+            width: 40,
+            height: 52,
+            vx: 0,
+            targetVx: 0,
+            accel: 1.2,
+            friction: 0.82,
+            angle: 0
+        };
+
+        let obstacles = [];
+        let mapCoins = [];
+        let particles = [];
+        let keys = {};
+        let spawnTimer = 0;
+        let explosionDuration = 0;
+
+        function showStoreNotice() {
+            const t = translations[currentLang];
+            notifTitle.innerText = t.storeNoticeTitle;
+            notifDesc.innerText = t.storeNoticeDesc;
+            notification.classList.remove('hidden');
+            setTimeout(() => {
+                notification.classList.add('hidden');
+            }, 2500);
+        }
+
+        function showPatchNotes() {
+            patchNotesBtn.classList.add('hidden');
+            mainMenu.classList.add('hidden');
+            patchScreen.classList.remove('hidden');
+        }
+
+        function closePatchNotes() {
+            patchScreen.classList.add('hidden');
+            mainMenu.classList.remove('hidden');
+            patchNotesBtn.classList.remove('hidden');
+        }
+
+        function showOptions() {
+            patchNotesBtn.classList.add('hidden');
+            mainMenu.classList.add('hidden');
+            optionsScreen.classList.remove('hidden');
+        }
+
+        function closeOptions() {
+            optionsScreen.classList.add('hidden');
+            mainMenu.classList.remove('hidden');
+            patchNotesBtn.classList.remove('hidden');
+        }
+
+        function startGame() {
+            patchNotesBtn.classList.add('hidden');
+            gameOverCard.classList.add('hidden');
+            optionsScreen.classList.add('hidden');
+            patchScreen.classList.add('hidden');
+            mainMenu.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            score = 0;
+            coins = 0;
+            obstacles = [];
+            mapCoins = [];
+            particles = [];
+            player.x = canvas.width / 2 - player.width / 2;
+            player.vx = 0;
+            player.angle = 0;
+            let prefixScore = currentLang === 'en' ? 'Score: ' : currentLang === 'zh' ? '得分: ' : currentLang === 'fr' ? 'Score : ' : currentLang === 'pt' ? 'Pontos: ' : 'Puntos: ';
+            scoreBoard.innerText = prefixScore + score;
+            coinBoard.innerHTML = '<span class="ui-coin-icon">$</span>' + coins;
+            gameState = 'PLAYING';
+            cancelAnimationFrame(animationFrameId);
+            gameLoop();
+        }
+
+        function returnToMenu() {
+            gameState = 'MENU';
+            gameOverCard.classList.add('hidden');
+            updateMenuRecords();
+            cancelAnimationFrame(animationFrameId);
+            gameScreen.classList.add('hidden');
+            mainMenu.classList.remove('hidden');
+            patchNotesBtn.classList.remove('hidden');
+        }
+
+        window.addEventListener('keydown', (e) => { 
+            keys[e.key] = true; 
+            if(e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') player.targetVx = -7;
+            if(e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') player.targetVx = 7;
+        });
+        
+        window.addEventListener('keyup', (e) => { 
+            keys[e.key] = false; 
+            if((e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') && player.targetVx < 0) player.targetVx = 0;
+            if((e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') && player.targetVx > 0) player.targetVx = 0;
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (gameState !== 'PLAYING') return;
+            let rect = canvas.getBoundingClientRect();
+            let touchX = e.touches[0].clientX - rect.left;
+            player.x += (touchX - player.width/2 - player.x) * 0.5;
+            player.angle = (touchX - player.width/2 - player.x) * 0.2; 
+        });
+
+        function triggerExplosion(x, y) {
+            for (let i = 0; i < 25; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    dx: (Math.random() - 0.5) * 8,
+                    dy: (Math.random() - 0.5) * 8,
+                    radius: Math.random() * 4 + 2,
+                    color: Math.random() > 0.5 ? '#f43f5e' : '#fb7185',
+                    alpha: 1
+                });
+            }
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (gameState === 'PLAYING') {
+                if (player.targetVx !== 0) {
+                    player.vx += player.targetVx > 0 ? player.accel : -player.accel;
+                    if (player.vx > 7) player.vx = 7;
+                    if (player.vx < -7) player.vx = -7;
+                } else {
+                    player.vx *= player.friction;
+                    if (Math.abs(player.vx) < 0.1) player.vx = 0;
+                }
+
+                player.x += player.vx;
+
+                if (player.x < 0) {
+                    player.x = 0;
+                    player.vx *= -0.5;
+                } else if (player.x + player.width > canvas.width) {
+                    player.x = canvas.width - player.width;
+                    player.vx *= -0.5;
+                }
+
+                let targetAngle = player.vx * 3; 
+                player.angle += (targetAngle - player.angle) * 0.15;
+
+                spawnTimer++;
+                if (spawnTimer % 40 === 0) {
+                    let obsWidth = Math.random() * 50 + 40;
+                    obstacles.push({
+                        x: Math.random() * (canvas.width - obsWidth),
+                        y: -50,
+                        width: obsWidth,
+                        height: 18,
+                        speed: Math.random() * 2 + 5
+                    });
+                }
+
+                if (spawnTimer % 60 === 0) {
+                    mapCoins.push({
+                        x: Math.random() * (canvas.width - 40) + 20,
+                        y: -40,
+                        radius: 14,
+                        speed: 4.5
+                    });
+                }
+
+                // 1. Obstáculos
+                for (let i = obstacles.length - 1; i >= 0; i--) {
+                    let obs = obstacles[i];
+                    obs.y += obs.speed;
+
+                    ctx.fillStyle = '#38bdf8';
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = '#38bdf8';
+                    ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+                    ctx.shadowBlur = 0;
+
+                    if (
+                        player.x < obs.x + obs.width &&
+                        player.x + player.width > obs.x &&
+                        player.y < obs.y + obs.height &&
+                        player.y + player.height > obs.y
+                    ) {
+                        triggerExplosion(player.x + player.width / 2, player.y + player.height / 2);
+                        gameState = 'GAMEOVER';
+                        explosionDuration = 40;
+                    }
+
+                    if (obs.y > canvas.height) {
+                        obstacles.splice(i, 1);
+                        score += 10;
+                        let prefix = currentLang === 'en' ? 'Score: ' : currentLang === 'zh' ? '得分: ' : currentLang === 'fr' ? 'Score : ' : currentLang === 'pt' ? 'Pontos: ' : 'Puntos: ';
+                        scoreBoard.innerText = prefix + score;
+                    }
+                }
+
+                // 2. Monedas
+                for (let i = mapCoins.length - 1; i >= 0; i--) {
+                    let coin = mapCoins[i];
+                    coin.y += coin.speed;
+
+                    ctx.save();
+                    ctx.shadowBlur = 12;
+                    ctx.shadowColor = '#fbbf24';
+
+                    ctx.fillStyle = '#ca8a04';
+                    ctx.beginPath();
+                    ctx.arc(coin.x, coin.y, coin.radius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#eab308';
+                    ctx.beginPath();
+                    ctx.arc(coin.x, coin.y, coin.radius - 2, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.strokeStyle = '#fef08a';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.arc(coin.x, coin.y, coin.radius - 4, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#713f12';
+                    ctx.font = 'bold 13px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('$', coin.x, coin.y);
+
+                    ctx.restore();
+
+                    let playerCenterX = player.x + player.width / 2;
+                    let playerCenterY = player.y + player.height / 2;
+                    let distX = playerCenterX - coin.x;
+                    let distY = playerCenterY - coin.y;
+                    let distance = Math.sqrt(distX * distX + distY * distY);
+
+                    if (distance < (player.width / 2 + coin.radius)) {
+                        coins++;
+                        coinBoard.innerHTML = '<span class="ui-coin-icon">$</span>' + coins;
+                        mapCoins.splice(i, 1);
+                        continue;
+                    }
+
+                    if (coin.y > canvas.height + 30) {
+                        mapCoins.splice(i, 1);
+                    }
+                }
+
+                // 3. Globo
+                ctx.save();
+                    ctx.translate(player.x + player.width/2, player.y + player.height/2);
+                    ctx.rotate(player.angle * Math.PI / 180);
+
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = '#f43f5e';
+                    ctx.fillStyle = '#f43f5e';
+                    ctx.beginPath();
+                    ctx.ellipse(0, -8, player.width/2, player.height/1.6, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    ctx.strokeStyle = '#94a3b8';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(0, player.height/2 - 12);
+                    ctx.lineTo(0, player.height/2 + 8);
+                    ctx.stroke();
+                ctx.restore();
+
+            } else if (gameState === 'GAMEOVER') {
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    let p = particles[i];
+                    p.x += p.dx;
+                    p.y += p.dy;
+                    p.alpha -= 0.02;
+
+                    if (p.alpha > 0) {
+                        ctx.fillStyle = p.color;
+                        ctx.globalAlpha = p.alpha;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.globalAlpha = 1;
+                    }
+                }
+
+                explosionDuration--;
+                if (explosionDuration <= 0 && gameOverCard.classList.contains('hidden')) {
+                    finalScoreVal.innerText = score;
+                    finalCoinsVal.innerText = coins;
+
+                    let isNewHighScore = false;
+                    let isNewHighCoins = false;
+
+                    if (score > highScore) {
+                        highScore = score;
+                        localStorage.setItem('dodger_highscore', highScore);
+                        isNewHighScore = true;
+                    }
+
+                    if (coins > highCoins) {
+                        highCoins = coins;
+                        localStorage.setItem('dodger_highcoins', highCoins);
+                        isNewHighCoins = true;
+                    }
+
+                    if (isNewHighScore) {
+                        newScoreBadge.classList.remove('hidden');
+                    } else {
+                        newScoreBadge.classList.add('hidden');
+                    }
+
+                    if (isNewHighCoins) {
+                        newCoinsBadge.classList.remove('hidden');
+                    } else {
+                        newCoinsBadge.classList.add('hidden');
+                    }
+
+                    gameOverCard.classList.remove('hidden');
+                }
+            }
+
+            if (gameState !== 'GAMEOVER' || particles.length > 0) {
+                animationFrameId = requestAnimationFrame(gameLoop);
+            }
+        }
+    </script>
+</body>
+</html>
